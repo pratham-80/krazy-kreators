@@ -22,8 +22,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 const ContactDialog = dynamic(() => import("./ContactDialog"), { ssr: false });
 // Blogs and Resources are not in the menu items as i want to reuse it on our next build
-// const menuItems = ["Solutions", "Portfolio", "Blogs", "Resources", "Company"] as const;
-const menuItems = ["Solutions", "Portfolio", "Company"] as const;
+// const menuItems = ["Solutions", "Case Studies", "Blogs", "Resources", "Company"] as const;
+const menuItems = ["Solutions", "Case Studies", "Company"] as const;
 type TopTab = typeof menuItems[number];
 
 const megaContent: Record<TopTab, { title: string; desc: string; href: string; icon: React.ComponentType<{ className?: string }> }[]> = {
@@ -34,7 +34,7 @@ const megaContent: Record<TopTab, { title: string; desc: string; href: string; i
 		// Product Categories are not in the menu items as i want to reuse it on our next build
 		// { title: "Product Categories", desc: "Tops, shirts, dresses, kidswear", href: "/#explore-designs", icon: Grid3X3 },
 	],
-	Portfolio: [
+	"Case Studies": [
 		{ title: "Drover Cowboy Threads", desc: "Modern westernwear case study", href: "/case-studies/drover", icon: FolderKanban },
 		{ title: "Tilted Lotus", desc: "Premium apparel brand", href: "/case-studies/tilted-lotus", icon: FolderKanban },
 		{ title: "Las Loungewear", desc: "Comfort-first everyday wear", href: "/case-studies/las", icon: FolderKanban },
@@ -153,18 +153,18 @@ export default function Navbar() {
 			<div className="min-w-[80%] lg:max-w-[80%] mx-auto flex items-center justify-between py-4 px-4 md:px-0 lg:px-0">
 				{/* Logo and Company Name */}
 				<div className="flex items-center gap-3">
-					<Link href="/" className="block">
+					<Link href="/" className="flex items-center gap-3">
 						<img
 							src="/brands/Logo.svg"
 							alt="Krazy Kreators"
 							className="h-10 w-auto opacity-90 hover:opacity-100 transition-opacity duration-300"
 						/>
-					</Link>
 					<span
 						className={`font-serif font-bold text-xl transition-colors ${invertTabs ? "text-white" : "text-[#2D2A2E]"}`}
 					>
 						Krazy Kreators
 					</span>
+					</Link>
 				</div>
 				{/* Desktop Menu */}
 				<ul className="hidden md:flex gap-8 ml-12 text-base font-medium">

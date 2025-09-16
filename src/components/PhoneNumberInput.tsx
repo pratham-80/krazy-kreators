@@ -14,6 +14,7 @@ interface PhoneNumberInputProps {
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
+  onCountryChange?: (country: CountryCode) => void;
 }
 
 
@@ -212,9 +213,12 @@ export default function PhoneNumberInput({
   value,
   onChange,
   required,
+  onCountryChange,
 }: PhoneNumberInputProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]); // Default to US
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(() =>
+    countryCodes.find((c) => c.code === "US") || countryCodes[0]
+  ); // Default to United States (+1)
   const [phoneNumber, setPhoneNumber] = useState("");
   const [displayValue, setDisplayValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -229,6 +233,7 @@ export default function PhoneNumberInput({
     setHighlightedIndex(-1);
     // Reset display value to just the phone number part when selecting from dropdown
     setDisplayValue(phoneNumber);
+    if (onCountryChange) onCountryChange(country);
   };
 
   const handleToggle = () => {
@@ -340,62 +345,72 @@ export default function PhoneNumberInput({
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setDisplayValue(newValue);
-    
-    // Check if user is typing a country code directly (starts with +)
-    if (newValue.startsWith('+')) {
-      // Find matching country by dial code
-      const matchingCountry = countryCodes.find(country => {
-        const dialCodeWithoutPlus = country.dialCode.replace('+', '');
-        const inputWithoutPlus = newValue.replace('+', '');
-        
-        // Check if input starts with this country's dial code
-        if (inputWithoutPlus.startsWith(dialCodeWithoutPlus)) {
-          // Make sure it's not a partial match of a longer dial code
-          const remainingInput = inputWithoutPlus.substring(dialCodeWithoutPlus.length);
-          // If there's remaining input, it should be digits (phone number)
-          return remainingInput === '' || /^\d+$/.test(remainingInput);
-        }
-        return false;
-      });
-      
+
+    // Normalize for detection (strip spaces, keep leading + if present)
+    const compact = newValue.replace(/\s+/g, '');
+
+    // Helper to emit synthetic event
+    const emit = (fullValue: string) => {
+      if (onChange) {
+        const syntheticEvent = {
+          target: {
+            value: fullValue,
+            name: name || "",
+          },
+        } as React.ChangeEvent<HTMLInputElement>;
+        onChange(syntheticEvent);
+      }
+    };
+
+    // Case 1: input starts with '+' → detect exact dial code
+    if (compact.startsWith('+')) {
+      const inputWithoutPlus = compact.slice(1);
+      // Choose the longest matching dial code to avoid partial matches
+      const matchingCountry = countryCodes
+        .sort((a, b) => b.dialCode.length - a.dialCode.length)
+        .find((country) => {
+          const dial = country.dialCode.replace('+', '');
+          return inputWithoutPlus.startsWith(dial);
+        });
+
       if (matchingCountry) {
-        // Extract the phone number part (after the country code)
-        const dialCodeWithoutPlus = matchingCountry.dialCode.replace('+', '');
-        const inputWithoutPlus = newValue.replace('+', '');
-        const phoneNumberPart = inputWithoutPlus.substring(dialCodeWithoutPlus.length);
-        
-        // Update selected country and phone number
+        const dial = matchingCountry.dialCode.replace('+', '');
+        const phoneNumberPart = inputWithoutPlus.substring(dial.length);
         setSelectedCountry(matchingCountry);
         setPhoneNumber(phoneNumberPart);
-        
-        // Create a synthetic event with the full phone number
-        if (onChange) {
-          const syntheticEvent = {
-            target: { 
-              value: newValue, 
-              name: name || "" 
-            }
-          } as React.ChangeEvent<HTMLInputElement>;
-          onChange(syntheticEvent);
-        }
+        if (onCountryChange) onCountryChange(matchingCountry);
+        emit(newValue);
         return;
       }
     }
-    
-    // Regular phone number input (without country code)
-    setPhoneNumber(newValue);
-    
-    // Create a synthetic event with the full phone number
-    if (onChange) {
-      const syntheticEvent = {
-        target: { 
-          value: `${selectedCountry.dialCode} ${newValue}`, 
-          name: name || "" 
-        }
-      } as React.ChangeEvent<HTMLInputElement>;
-      onChange(syntheticEvent);
+
+    // Case 2: input begins with digits only → try to detect dial code prefix
+    if (/^\d{1,4}/.test(compact)) {
+      const matchingCountry = countryCodes
+        .sort((a, b) => b.dialCode.length - a.dialCode.length)
+        .find((country) => compact.startsWith(country.dialCode.replace('+', '')));
+
+      if (matchingCountry) {
+        const dial = matchingCountry.dialCode.replace('+', '');
+        const phoneNumberPart = compact.substring(dial.length);
+        setSelectedCountry(matchingCountry);
+        setPhoneNumber(phoneNumberPart);
+        if (onCountryChange) onCountryChange(matchingCountry);
+        emit(`+${dial}${phoneNumberPart ? ` ${phoneNumberPart}` : ''}`);
+        return;
+      }
     }
+
+    // Regular phone number input (no detectable country code change)
+    setPhoneNumber(newValue);
+    emit(`${selectedCountry.dialCode} ${newValue}`);
   };
+
+  // Notify parent of initial country selection
+  useEffect(() => {
+    if (onCountryChange) onCountryChange(selectedCountry);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-focus search input when dropdown opens
   useEffect(() => {

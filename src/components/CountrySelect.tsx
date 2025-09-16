@@ -38,6 +38,7 @@ export default function CountrySelect({
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   useEffect(() => {
     let isMounted = true;
@@ -89,6 +90,7 @@ export default function CountrySelect({
     setSelectedCountry(country);
     setIsOpen(false);
     setSearchTerm("");
+    setHighlightedIndex(-1);
     
     // Create a synthetic event for onChange
     if (onChange) {
@@ -101,8 +103,66 @@ export default function CountrySelect({
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
+    setHighlightedIndex(-1);
     if (!isOpen && searchRef.current) {
       setTimeout(() => searchRef.current?.focus(), 100);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const key = e.key;
+    // If closed and user starts typing, open and seed the search
+    if (!isOpen) {
+      if (key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        setIsOpen(true);
+        const char = key;
+        setTimeout(() => {
+          setSearchTerm(char);
+          searchRef.current?.focus();
+          // Move cursor to end
+          const input = searchRef.current;
+          if (input) {
+            const len = input.value.length;
+            input.setSelectionRange(len, len);
+          }
+        }, 0);
+        e.preventDefault();
+      } else if (key === 'Enter' || key === ' ') {
+        setIsOpen(true);
+        setTimeout(() => searchRef.current?.focus(), 0);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    // If open, basic keyboard support
+    if (key === 'Escape') {
+      setIsOpen(false);
+      setSearchTerm("");
+      e.preventDefault();
+      return;
+    }
+
+    // If open and user types, forward input to search box
+    if (key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const char = key;
+      setSearchTerm(prev => prev + char);
+      setTimeout(() => {
+        const input = searchRef.current;
+        input?.focus();
+        if (input) {
+          const len = input.value.length;
+          input.setSelectionRange(len, len);
+        }
+      }, 0);
+      e.preventDefault();
+      return;
+    }
+
+    if (key === 'Backspace') {
+      setSearchTerm(prev => prev.slice(0, -1));
+      setTimeout(() => searchRef.current?.focus(), 0);
+      e.preventDefault();
     }
   };
 
@@ -119,11 +179,65 @@ export default function CountrySelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setHighlightedIndex(-1);
+
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    // Auto-select if user types a 2-letter ISO code
+    if (trimmed.length === 2 && /^[A-Za-z]{2}$/.test(trimmed)) {
+      const match = countries.find(c => c.code.toLowerCase() === trimmed.toLowerCase());
+      if (match) {
+        handleCountrySelect(match);
+      }
+      return;
+    }
+
+    // Optionally, if there's an exact name match, select it immediately
+    const exactByName = countries.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (exactByName) {
+      handleCountrySelect(exactByName);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen) return;
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => prev < filteredCountries.length - 1 ? prev + 1 : 0);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => prev > 0 ? prev - 1 : filteredCountries.length - 1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && filteredCountries[highlightedIndex]) {
+          handleCountrySelect(filteredCountries[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        setIsOpen(false);
+        setSearchTerm("");
+        setHighlightedIndex(-1);
+        break;
+    }
+  };
+
   return (
     <div ref={dropdownRef} className="relative">
       <div
         className={`${className} cursor-pointer flex items-center justify-between`}
         onClick={handleToggle}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
       >
         <div className="flex items-center">
           {selectedCountry && (
@@ -156,17 +270,21 @@ export default function CountrySelect({
                 type="text"
                 placeholder="Search countries..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+                autoComplete="off"
                 className="w-full pl-10 pr-3 py-2 border border-[#ECE9E2] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#CBB49A]/20 focus:border-[#CBB49A]"
               />
             </div>
           </div>
           <div className="max-h-48 overflow-y-auto">
             {filteredCountries.length > 0 ? (
-              filteredCountries.map((country) => (
+              filteredCountries.map((country, index) => (
                 <div
                   key={country.code}
-                  className="px-3 py-2 hover:bg-[#F8F7F4] cursor-pointer text-sm text-[#2D2A2E] flex items-center"
+                  className={`px-3 py-2 cursor-pointer text-sm text-[#2D2A2E] flex items-center ${
+                    index === highlightedIndex ? 'bg-[#CBB49A]/20' : 'hover:bg-[#F8F7F4]'
+                  }`}
                   onClick={() => handleCountrySelect(country)}
                 >
                   <ReactCountryFlag 

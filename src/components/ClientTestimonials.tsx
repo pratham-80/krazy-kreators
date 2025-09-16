@@ -110,7 +110,7 @@ const TestimonialsSection = () => {
 
   return (
     <section className="py-24 bg-gradient-to-br from-[#FAFAFA] to-white">
-      <div className="min-w-[90%] xl:max-w-[85%] 2xl:max-w-[80%] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-w-[80%] xl:max-w-[85%] 2xl:max-w-[80%] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div
          
@@ -124,8 +124,8 @@ const TestimonialsSection = () => {
           </p>
         </div>
 
-        {/* Testimonial Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* Testimonial Cards - single row */}
+        <div className="grid grid-cols-4 gap-8">
           {testimonials.map((t, i) => (
             <TestimonialCard
               key={i}

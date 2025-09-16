@@ -217,6 +217,9 @@ export default function ContactDialog({ open, onClose, selectedPlan }: ContactDi
                   required
                   value={formData.phone}
                   onChange={handlePhoneChange}
+                  onCountryChange={(country) =>
+                    setFormData((prev) => ({ ...prev, country: country.code }))
+                  }
                   className="w-full rounded-xl border border-[#ECE9E2] bg-white px-4 py-3 text-[#2D2A2E] placeholder-[#A9A29D] focus:outline-none focus:ring-2 focus:ring-[#CBB49A]/20 focus:border-[#CBB49A]"
                   placeholder="Enter phone number"
                 />
@@ -250,6 +253,7 @@ export default function ContactDialog({ open, onClose, selectedPlan }: ContactDi
                 <label htmlFor="cd-country" className="block text-sm font-medium text-[#2D2A2E] mb-1">Country <span className="!text-[#CBB49A] !font-bold">*</span></label>
                 <CountrySelect
                   id="cd-country"
+                  name="country"
                   name="country"
                   value={formData.country}
                   onChange={handleInputChange}
