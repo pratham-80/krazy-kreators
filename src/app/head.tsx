@@ -10,17 +10,12 @@ export default function Head() {
       <link rel="preconnect" href="https://krazykreators.com" />
       <link rel="dns-prefetch" href="https://krazykreators.com" />
 
-      {/* Favicons for broad browser support, including Safari */}
-      {/* SVG favicon is preferred for modern browsers including Safari 15+ */}
-      <link rel="icon" href="/Logo.svg" type="image/svg+xml" />
-      {/* Fallback ICO for older browsers */}
-      <link rel="alternate icon" href="/Logo.ico" />
-      {/* Safari pinned tab (uses monochrome mask) */}
-      <link rel="mask-icon" href="/Logo.svg" color="#111827" />
-      {/* Apple touch icon - Safari iOS homescreen. If a PNG isn't available, Safari will fallback. */}
-      <link rel="apple-touch-icon" href="/Logo.ico" />
+      {/* Favicon for Safari compatibility with cache busting */}
+      <link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml" />
+      <link rel="alternate icon" href="/favicon.ico?v=3" type="image/x-icon" />
+      <link rel="shortcut icon" href="/favicon.ico?v=3" />
+      <link rel="apple-touch-icon" href="/favicon.ico?v=3" />
+      <link rel="mask-icon" href="/favicon.svg?v=3" color="#122730" />
     </>
   );
 }
-
-

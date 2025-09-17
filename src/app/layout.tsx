@@ -18,9 +18,12 @@ export const metadata: Metadata = {
     canonical: "https://krazykreators.com/",
   },
   icons: {
-    icon: "/Logo.ico",
-    shortcut: "/Logo.ico",
-    apple: "/Logo.ico",
+    icon: [
+      { url: "/favicon.svg?v=3", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=3", sizes: "32x32", type: "image/x-icon" },
+    ],
+    shortcut: "/favicon.ico?v=3",
+    apple: "/favicon.ico?v=3",
   },
   openGraph: {
     title: "Krazy Kreators | Start Your Clothing Brand With Us",
